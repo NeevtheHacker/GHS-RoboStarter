@@ -1,6 +1,10 @@
 {
   "name": "GHS VEX PROS + LemLib",
   "image": "ubuntu:22.04",
+  "features": {
+    "ghcr.io/devcontainers/features/python:1": {}
+  },
+  "overrideCommand": true,
   "containerEnv": {
     "PATH": "${containerEnv:PATH}:${homeFolder}/.local/bin"
   },
@@ -8,7 +12,8 @@
   "customizations": {
     "vscode": {
       "extensions": [
-        "sigbots.pros"
+        "sigbots.pros",
+        "ms-vscode.cpptools"
       ]
     }
   }

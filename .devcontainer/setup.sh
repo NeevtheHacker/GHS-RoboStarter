@@ -1,35 +1,29 @@
 #!/usr/bin/env bash
 set -e
 
-echo "=== 1. Syncing Essential Build Tools ==="
+ARM_VER="13.3.rel1"
+ARM_PKG="arm-gnu-toolchain-${ARM_VER}-x86_64-arm-none-eabi"
+ARM_DIR="/opt/${ARM_PKG}"
+ARM_URL="https://developer.arm.com/-/media/Files/downloads/gnu/${ARM_VER}/binrel/${ARM_PKG}.tar.xz"
+
+echo "=== 1. Base deps ==="
 sudo apt-get update -y
-sudo apt-get install -y --no-install-recommends \
-    wget tar bzip2 unzip make git gcc-multilib g++-multilib python3 python3-pip
+sudo apt-get install -y --no-install-recommends wget xz-utils python3-pip make
+# NOTE: do NOT install apt's gcc-arm-none-eabi — it's the old 10.3 that breaks the build.
 
-echo "=== 2. Creating VS Code Extension Isolation Paths ==="
-# Map exact destination targets matching the official extension path mappings
-PROS_STORAGE_DIR="$HOME/.vscode-server/data/User/globalStorage/sigbots.pros/install"
-mkdir -p "$PROS_STORAGE_DIR/pros-toolchain-linux"
-mkdir -p "$PROS_STORAGE_DIR/pros-cli-linux"
+echo "=== 2. Official ARM GNU toolchain ${ARM_VER} (matches PROS kernel 4.2.2) ==="
+if [ ! -x "${ARM_DIR}/bin/arm-none-eabi-gcc" ]; then
+  wget -q "${ARM_URL}" -O /tmp/arm.tar.xz
+  sudo tar -xf /tmp/arm.tar.xz -C /opt
+  rm /tmp/arm.tar.xz
+fi
+echo "export PATH=\"${ARM_DIR}/bin:\$PATH\"" | sudo tee /etc/profile.d/arm-toolchain.sh >/dev/null
+export PATH="${ARM_DIR}/bin:$PATH"
 
-echo "=== 3. Pre-Seeding GNU ARM GCC 10.3.1 ==="
-cd /tmp
-wget -q https://arm.com
-tar -xjf gcc-arm-none-eabi-10.3-2021.10-x86_64-linux.tar.bz2 -C "$PROS_STORAGE_DIR/pros-toolchain-linux" --strip-components=1
-rm gcc-arm-none-eabi-10.3-2021.10-x86_64-linux.tar.bz2
+echo "=== 3. PROS CLI (system-wide, on PATH) ==="
+sudo pip3 install pros-cli
 
-echo "=== 4. Pre-Seeding PROS CLI (v3.5.6 binary) ==="
-wget -q https://github.com
-unzip -q pros_cli-3.5.6-lin-64bit.zip -d "$PROS_STORAGE_DIR/pros-cli-linux"
-rm pros_cli-3.5.6-lin-64bit.zip
-# Make the packed extension binary executable
-chmod +x "$PROS_STORAGE_DIR/pros-cli-linux/pros"
-
-echo "=== 5. Injecting Environment Fallbacks ==="
-export PATH="$PATH:$PROS_STORAGE_DIR/pros-cli-linux:$PROS_STORAGE_DIR/pros-toolchain-linux/bin"
-
-echo "=== 6. Validating Integrated Executables ==="
+echo "=== 4. Verify — gcc MUST say 13.3 ==="
+arm-none-eabi-gcc --version | head -1
 pros --version
-arm-none-eabi-gcc --version
-
-echo "Pre-seed complete. Environment fully mimics the extension installer."
+echo "Ready — run 'pros make'"

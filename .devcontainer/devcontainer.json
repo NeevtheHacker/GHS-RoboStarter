@@ -1,7 +1,15 @@
 {
   "name": "GHS VEX PROS + LemLib",
-  "image": "mcr.microsoft.com/devcontainers/cpp:1-ubuntu-22.04",
-  "features": { "ghcr.io/devcontainers/features/python:1": {} },
+  "image": "ubuntu:22.04",
+  "containerEnv": {
+    "PATH": "${containerEnv:PATH}:${homeFolder}/.local/bin"
+  },
   "postCreateCommand": "bash .devcontainer/setup.sh",
-  "customizations": { "vscode": { "extensions": ["sigbots.pros"] } }
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "sigbots.pros"
+      ]
+    }
+  }
 }
